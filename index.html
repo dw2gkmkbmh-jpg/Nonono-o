@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mein Ticket</title>
+    
+    <!-- Настройки для запуска как полноценное приложение с главного экрана (iOS & Android) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mein Ticket">
+    <meta name="application-name" content="Mein Ticket">
+    <meta name="theme-color" content="#E2001A">
+
+    <!-- Встроенная SVG-иконка для рабочего стола телефона -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E2001A'/%3E%3Cg transform='translate(54, 46) scale(1.2)'%3E%3Crect x='20' y='4' width='12' height='4.6' rx='2.3' fill='%2318181B'/%3E%3Crect x='12' y='12' width='38' height='4.6' rx='2.3' fill='%2318181B'/%3E%3Crect x='10.5' y='20' width='42' height='4.6' rx='2.3' fill='%2318181B'/%3E%3Crect x='8' y='28' width='48' height='4.6' rx='2.3' fill='%23FFFFFF'/%3E%3Crect x='4' y='36' width='54' height='4.6' rx='2.3' fill='%23FFFFFF'/%3E%3Crect x='5.5' y='44' width='35' height='4.6' rx='2.3' fill='%23FFFFFF'/%3E%3Crect x='7' y='52' width='38' height='4.6' rx='2.3' fill='%23FBC02D'/%3E%3Crect x='16' y='60' width='37' height='4.6' rx='2.3' fill='%23FBC02D'/%3E%3Crect x='12.5' y='68' width='32' height='4.6' rx='2.3' fill='%23FBC02D'/%3E%3C/g%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23E2001A'/%3E%3Cg transform='translate(54, 46) scale(1.2)'%3E%3Crect x='20' y='4' width='12' height='4.6' rx='2.3' fill='%2318181B'/%3E%3Crect x='12' y='12' width='38' height='4.6' rx='2.3' fill='%2318181B'/%3E%3Crect x='10.5' y='20' width='42' height='4.6' rx='2.3' fill='%2318181B'/%3E%3Crect x='8' y='28' width='48' height='4.6' rx='2.3' fill='%23FFFFFF'/%3E%3Crect x='4' y='36' width='54' height='4.6' rx='2.3' fill='%23FFFFFF'/%3E%3Crect x='5.5' y='44' width='35' height='4.6' rx='2.3' fill='%23FFFFFF'/%3E%3Crect x='7' y='52' width='38' height='4.6' rx='2.3' fill='%23FBC02D'/%3E%3Crect x='16' y='60' width='37' height='4.6' rx='2.3' fill='%23FBC02D'/%3E%3Crect x='12.5' y='68' width='32' height='4.6' rx='2.3' fill='%23FBC02D'/%3E%3C/g%3E%3C/svg%3E">
+
+    <!-- Подключаем Tailwind CSS для быстрой и адаптивной верстки -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем шрифт Inter, максимально близкий к интерфейсам DB и Transdev -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        dbRed: '#E2001A',
+                        transdevRed: '#E30613',
+                        appBg: '#F4F4F6',
+                        cardBorder: '#D4D4D8'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Плавная прокрутка и скрытие полосы прокрутки внутри экрана смартфона */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Четкая отрисовка пикселей для Aztec-кода */
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Анимация переключения вкладок */
+        .tab-fade {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-[#E2001A] sm:bg-zinc-900 min-h-screen flex items-center justify-center sm:p-4 font-sans antialiased text-zinc-900 select-none">
+
+    <!-- Контейнер мобильного устройства (на десктопе выглядит как рамка смартфона, на телефоне — на весь экран) -->
+    <div class="w-full sm:w-[390px] h-screen sm:h-[844px] bg-[#F4F4F6] sm:rounded-[40px] sm:border-[8px] sm:border-zinc-800 shadow-2xl flex flex-col overflow-hidden relative">
+
+        <!-- 1. ВЕРХНЯЯ КРАСНАЯ ШАПКА (#E2001A) с учетом выреза экрана (Safe Area) -->
+        <header class="bg-[#E2001A] text-white pt-[env(safe-area-inset-top)] shrink-0 shadow-sm z-20">
+            <div class="h-[56px] px-4 flex items-center justify-between">
+                <!-- Кнопка "Назад" со стрелкой влево -->
+                <button id="backBtn" onclick="handleBackClick()" class="p-2 -ml-2 rounded-full active:bg-red-800 transition-colors focus:outline-none" aria-label="Zurück">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                </button>
+
+                <!-- Заголовок по центру -->
+                <h1 id="headerTitle" class="text-[19px] font-bold tracking-tight">Mein Ticket</h1>
+
+                <!-- Пустой блок для симметричного центрирования заголовка -->
+                <div class="w-10"></div>
+            </div>
+        </header>
+
+        <!-- ОСНОВНАЯ ОБЛАСТЬ КОНТЕНТА (ПРОКРУЧИВАЕМАЯ) -->
+        <main class="flex-1 overflow-y-auto no-scrollbar pb-24">
+
+            <!-- ==================== ВКЛАДКА 1: TICKETS (ОСНОВНОЙ ЭКРАН ПО РЕФЕРЕНСУ) ==================== -->
+            <div id="view-tickets" class="tab-fade px-3 pt-2.5 space-y-2.5">
+
+                <!-- 2. КАРТОЧКА ЗАГОЛОВКА БИЛЕТА (D-TICKET) -->
+                <div class="bg-white border border-zinc-300 rounded-[6px] py-3 px-4 flex items-center justify-center gap-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                    <!-- Точный официальный логотип D-Ticket: 9 полос (3 черные, 3 красные, 3 золотые) -->
+                    <svg class="w-9 h-11 shrink-0" viewBox="0 0 60 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 3 черные полосы -->
+                        <rect x="20" y="4" width="12" height="4.4" rx="2.2" fill="#18181B"/>
+                        <rect x="12" y="12" width="38" height="4.4" rx="2.2" fill="#18181B"/>
+                        <rect x="10.5" y="20" width="42" height="4.4" rx="2.2" fill="#18181B"/>
+                        <!-- 3 красные полосы -->
+                        <rect x="8" y="28" width="48" height="4.4" rx="2.2" fill="#E2231A"/>
+                        <rect x="4" y="36" width="54" height="4.4" rx="2.2" fill="#E2231A"/>
+                        <rect x="5.5" y="44" width="35" height="4.4" rx="2.2" fill="#E2231A"/>
+                        <!-- 3 золотые полосы -->
+                        <rect x="7" y="52" width="38" height="4.4" rx="2.2" fill="#FBC02D"/>
+                        <rect x="16" y="60" width="37" height="4.4" rx="2.2" fill="#FBC02D"/>
+                        <rect x="12.5" y="68" width="32" height="4.4" rx="2.2" fill="#FBC02D"/>
+                    </svg>
+                    <span class="text-[22px] font-extrabold tracking-wide text-zinc-900">D-TICKET</span>
+                </div>
+
+                <!-- 3. КАРТОЧКА С AZTEC-КОДОМ -->
+                <div class="bg-white border border-zinc-300 rounded-[6px] p-3.5 flex flex-col items-center justify-center relative shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                    <!-- Контейнер для Canvas с Aztec-кодом -->
+                    <div class="w-full aspect-square max-w-[330px] flex items-center justify-center relative">
+                        <canvas id="aztecCanvas" class="w-full h-full block"></canvas>
+                    </div>
+                </div>
+
+                <!-- 4. КАРТОЧКА ПЕРЕВОЗЧИКА (TRANSDEV + D-TICKET) -->
+                <div class="bg-white border border-zinc-300 rounded-[6px] py-2.5 px-4 flex items-center justify-between shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                    <!-- Левая часть: Логотип Transdev -->
+                    <div class="flex items-center gap-1.5">
+                        <!-- Фирменный значок Transdev (дуга и стилизованный человек в движении) -->
+                        <svg class="w-8 h-8 shrink-0" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M23.5 6.5C15.5 5.2 8 10.6 6.7 18.6C5.4 26.6 10.8 34.1 18.8 35.4C22.4 36 25.9 35.2 28.8 33.4" stroke="#E30613" stroke-width="2.6" stroke-linecap="round"/>
+                            <circle cx="23.5" cy="12" r="2.7" fill="#E30613"/>
+                            <path d="M13 17.5C17.5 16.5 23 16 29.5 14.5C25.5 17.5 23.5 20.5 22.8 27.5L19.5 27.5C19.8 22.8 19.2 20.2 13 17.5Z" fill="#E30613"/>
+                        </svg>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-[#E30613] font-bold text-[21px] tracking-tight">transdev</span>
+                            <span class="text-[#E30613] text-[8.5px] font-medium tracking-tight mt-0.5">the mobility company</span>
+                        </div>
+                    </div>
+
+                    <!-- Правая часть: Мини-логотип Германии + D-TICKET -->
+                    <div class="flex items-center gap-2">
+                        <svg class="w-7 h-9 shrink-0" viewBox="0 0 60 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- 3 черные полосы -->
+                            <rect x="20" y="4" width="12" height="4.6" rx="2.3" fill="#18181B"/>
+                            <rect x="12" y="12" width="38" height="4.6" rx="2.3" fill="#18181B"/>
+                            <rect x="10.5" y="20" width="42" height="4.6" rx="2.3" fill="#18181B"/>
+                            <!-- 3 красные полосы -->
+                            <rect x="8" y="28" width="48" height="4.6" rx="2.3" fill="#E2231A"/>
+                            <rect x="4" y="36" width="54" height="4.6" rx="2.3" fill="#E2231A"/>
+                            <rect x="5.5" y="44" width="35" height="4.6" rx="2.3" fill="#E2231A"/>
+                            <!-- 3 золотые полосы -->
+                            <rect x="7" y="52" width="38" height="4.6" rx="2.3" fill="#FBC02D"/>
+                            <rect x="16" y="60" width="37" height="4.6" rx="2.3" fill="#FBC02D"/>
+                            <rect x="12.5" y="68" width="32" height="4.6" rx="2.3" fill="#FBC02D"/>
+                        </svg>
+                        <span class="text-[17px] font-extrabold tracking-tight text-zinc-900">D-TICKET</span>
+                    </div>
+                </div>
+
+                <!-- 5. ЗАГОЛОВОК СЕКЦИИ "Verbindungsdetails" -->
+                <div class="px-1 pt-1">
+                    <h2 class="text-[15px] font-normal text-zinc-500">Verbindungsdetails</h2>
+                </div>
+
+                <!-- 6. КАРТОЧКА СРОКА ДЕЙСТВИЯ БИЛЕТА -->
+                <div class="bg-white border border-zinc-300 rounded-[6px] p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3.5">
+                    <!-- Дата выдачи -->
+                    <div>
+                        <div class="text-[13px] text-zinc-500 font-normal">Ausgegeben am</div>
+                        <div id="display-issued" class="text-[16px] font-bold text-zinc-900 tracking-tight mt-0.5">11.01.2026 15:00</div>
+                    </div>
+
+                    <!-- Две колонки: Действителен с / Действителен до -->
+                    <div class="grid grid-cols-2 gap-2 pt-0.5">
+                        <div>
+                            <div class="text-[13px] text-zinc-500 font-normal">Gültig von</div>
+                            <div id="display-valid-from" class="text-[15.5px] font-bold text-zinc-900 tracking-tight mt-0.5">11.01.2026 15:00</div>
+                        </div>
+                        <div class="text-right sm:text-left pl-2">
+                            <div class="text-[13px] text-zinc-500 font-normal">Gültig bis</div>
+                            <div id="display-valid-until" class="text-[15.5px] font-bold text-zinc-900 tracking-tight mt-0.5">01.11.2028 15:00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. ДОПОЛНИТЕЛЬНАЯ СЕКЦИЯ (ПОЯВЛЯЕТСЯ ПРИ ПРОКРУТКЕ ВНИЗ, КАК В ОРИГИНАЛЬНОМ ПРИЛОЖЕНИИ) -->
+                <div class="px-1 pt-1">
+                    <h2 class="text-[15px] font-normal text-zinc-500">Fahrgastinformationen</h2>
+                </div>
+
+                <div class="bg-white border border-zinc-300 rounded-[6px] p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3">
+                    <div class="flex justify-between items-center border-b border-zinc-100 pb-2">
+                        <div>
+                            <div class="text-[12px] text-zinc-500">Name, Vorname</div>
+                            <div id="display-passenger-name" class="text-[15px] font-bold text-zinc-900">Veniamin Miller</div>
+                        </div>
+                        <span class="text-[11px] bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-medium">2. Klasse</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <div class="text-[12px] text-zinc-500">Geburtsdatum</div>
+                            <div id="display-dob" class="text-[14px] font-semibold text-zinc-900">26.03.2011</div>
+                        </div>
+                        <div>
+                            <div class="text-[12px] text-zinc-500">Ticket-ID</div>
+                            <div id="display-ticket-id" class="text-[14px] font-mono font-semibold text-zinc-700">DE-2026-884910</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ==================== ВКЛАДКА 2: KUNDENKONTO (ПРОФИЛЬ ПАССАЖИРА) ==================== -->
+            <div id="view-account" class="hidden tab-fade px-3 pt-3 space-y-3">
+                <div class="bg-white border border-zinc-300 rounded-[6px] p-4 shadow-sm flex items-center gap-3.5">
+                    <div id="account-avatar" class="w-12 h-12 rounded-full bg-red-50 text-[#E2001A] flex items-center justify-center font-bold text-lg border border-red-100">
+                        VM
+                    </div>
+                    <div>
+                        <div id="account-name-header" class="font-bold text-[16px] text-zinc-900">Veniamin Miller</div>
+                        <div class="text-[13px] text-zinc-500">Deutschland-Ticket Abo • Aktiv</div>
+                    </div>
+                </div>
+
+                <div class="px-1">
+                    <h2 class="text-[14px] text-zinc-500">Persönliche Daten</h2>
+                </div>
+
+                <div class="bg-white border border-zinc-300 rounded-[6px] divide-y divide-zinc-200 text-[14px]">
+                    <div class="p-3.5 flex justify-between">
+                        <span class="text-zinc-500">Geburtsdatum</span>
+                        <span id="account-dob" class="font-semibold text-zinc-900">26.03.2011</span>
+                    </div>
+                    <div class="p-3.5 flex justify-between">
+                        <span class="text-zinc-500">Kundennummer</span>
+                        <span class="font-semibold text-zinc-900">TD-94827104</span>
+                    </div>
+                    <div class="p-3.5 flex justify-between">
+                        <span class="text-zinc-500">Tarif</span>
+                        <span class="font-semibold text-zinc-900">D-Ticket (49,00 € / Monat)</span>
+                    </div>
+                    <div class="p-3.5 flex justify-between">
+                        <span class="text-zinc-500">Geltungsbereich</span>
+                        <span class="font-semibold text-zinc-900">Deutschlandweit (Nahverkehr)</span>
+                    </div>
+                    <div class="p-3.5 flex justify-between">
+                        <span class="text-zinc-500">Status</span>
+                        <span class="text-emerald-600 font-semibold flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Bezahlstatus OK
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== ВКЛАДКА 3: EINSTELLUNGEN (НАСТРОЙКИ ДЕМО-МАКЕТА) ==================== -->
+            <div id="view-settings" class="hidden tab-fade px-3 pt-3 space-y-3">
+                <!-- Экран блокировки паролем -->
+                <div id="settings-lock-screen" class="bg-white border border-zinc-300 rounded-[6px] p-5 shadow-sm space-y-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-red-50 text-[#E2001A] flex items-center justify-center mx-auto border border-red-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-[16px] text-zinc-900">Zugriff geschützt</h3>
+                        <p class="text-[12.5px] text-zinc-500 mt-1">Bitte Passwort eingeben, um Einstellungen zu öffnen</p>
+                    </div>
+                    <div class="max-w-[200px] mx-auto space-y-2">
+                        <input id="settings-password-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••" onkeydown="if(event.key==='Enter') unlockSettings()" class="w-full border border-zinc-300 rounded px-3 py-2.5 text-center text-[20px] font-bold tracking-[0.4em] focus:outline-none focus:border-[#E2001A]">
+                        <p id="settings-password-error" class="hidden text-[12px] text-[#E2001A] font-medium">Falsches Passwort</p>
+                    </div>
+                    <button onclick="unlockSettings()" class="w-full bg-[#E2001A] active:bg-red-700 text-white font-semibold py-2.5 px-4 rounded text-[14px] transition">
+                        Entsperren
+                    </button>
+                </div>
+
+                <!-- Основной контент настроек (скрыт до ввода пароля) -->
+                <div id="settings-unlocked-content" class="hidden bg-white border border-zinc-300 rounded-[6px] p-4 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-[15px] text-zinc-900">Ticket-Einstellungen</h3>
+                        <span class="text-[11px] bg-red-50 text-[#E2001A] px-2 py-0.5 rounded font-semibold">Demo</span>
+                    </div>
+                    <p class="text-[12.5px] text-zinc-500 leading-relaxed">
+                        Hier können Ticketdaten bearbeitet und das Aztec-Code-Muster neu erzeugt werden.
+                    </p>
+
+                    <div class="space-y-2.5 pt-1">
+                        <div>
+                            <label class="block text-[12px] font-medium text-zinc-600 mb-1">Name, Vorname (Fahrgast)</label>
+                            <input id="input-name" type="text" value="Veniamin Miller" class="w-full border border-zinc-300 rounded px-3 py-2 text-[14px] focus:outline-none focus:border-[#E2001A]">
+                        </div>
+                        <div>
+                            <label class="block text-[12px] font-medium text-zinc-600 mb-1">Geburtsdatum</label>
+                            <input id="input-dob" type="text" value="26.03.2011" class="w-full border border-zinc-300 rounded px-3 py-2 text-[14px] focus:outline-none focus:border-[#E2001A]">
+                        </div>
+                        <div>
+                            <label class="block text-[12px] font-medium text-zinc-600 mb-1">Ausgegeben am</label>
+                            <input id="input-issued" type="text" value="11.01.2026 15:00" class="w-full border border-zinc-300 rounded px-3 py-2 text-[14px] focus:outline-none focus:border-[#E2001A]">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[12px] font-medium text-zinc-600 mb-1">Gültig von</label>
+                                <input id="input-from" type="text" value="11.01.2026 15:00" class="w-full border border-zinc-300 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#E2001A]">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-medium text-zinc-600 mb-1">Gültig bis</label>
+                                <input id="input-until" type="text" value="01.11.2028 15:00" class="w-full border border-zinc-300 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#E2001A]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex gap-2">
+                        <button onclick="applyDemoSettings()" class="flex-1 bg-[#E2001A] active:bg-red-700 text-white font-semibold py-2.5 px-4 rounded text-[14px] transition">
+                            Speichern und Ticket öffnen
+                        </button>
+                        <button onclick="regenerateAztec()" class="bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold py-2.5 px-3 rounded text-[13px] transition" title="Aztec-Code neu generieren">
+                            Neuer Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ (ВМЕСТО ALERT) -->
+        <div id="toast" class="pointer-events-none opacity-0 transition-opacity duration-300 absolute bottom-20 left-4 right-4 bg-zinc-900/90 text-white text-[12.5px] py-2.5 px-4 rounded-lg shadow-lg text-center z-30">
+            Hinweis
+        </div>
+
+        <!-- 8. ФИКСИРОВАННАЯ НИЖНЯЯ ПАНЕЛЬ НАВИГАЦИИ -->
+        <nav class="bg-white border-t border-zinc-300 pb-[env(safe-area-inset-bottom)] shrink-0 z-20">
+            <div class="h-[66px] px-2 flex items-center justify-around">
+                <!-- Вкладка 1: Tickets -->
+                <button onclick="switchTab('tickets')" id="nav-tickets" class="flex-1 flex flex-col items-center justify-center py-1 text-[#E2001A] transition-colors">
+                    <!-- Иконка билета с перфорацией по центру -->
+                    <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 6H4C2.9 6 2 6.9 2 8V10.5C2.83 10.5 3.5 11.17 3.5 12C3.5 12.83 2.83 13.5 2 13.5V16C2 17.1 2.9 18 4 18H20C21.1 18 22 17.1 22 16V13.5C21.17 13.5 20.5 12.83 20.5 12C20.5 11.17 21.17 10.5 22 10.5V8C22 6.9 21.1 6 20 6ZM13 15.5H11V14H13V15.5ZM13 12.75H11V11.25H13V12.75ZM13 10H11V8.5H13V10Z"/>
+                    </svg>
+                    <span class="text-[11px] font-semibold tracking-tight">Tickets</span>
+                </button>
+
+                <!-- Вкладка 2: Kundenkonto -->
+                <button onclick="switchTab('account')" id="nav-account" class="flex-1 flex flex-col items-center justify-center py-1 text-zinc-500 hover:text-zinc-700 transition-colors">
+                    <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
+                    </svg>
+                    <span class="text-[11px] font-medium tracking-tight">Kundenkonto</span>
+                </button>
+
+                <!-- Вкладка 3: Einstellungen -->
+                <button onclick="switchTab('settings')" id="nav-settings" class="flex-1 flex flex-col items-center justify-center py-1 text-zinc-500 hover:text-zinc-700 transition-colors">
+                    <!-- Иконка двух шестеренок как на референсе -->
+                    <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                    <span class="text-[11px] font-medium tracking-tight">Einstellungen</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Декоративная нижняя полоска iOS Home Indicator (видна на десктопе) -->
+        <div class="hidden sm:flex bg-white justify-center pb-2 pt-0.5 shrink-0">
+            <div class="w-32 h-1 bg-zinc-900 rounded-full"></div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * Генератор визуального Aztec-кода (стандарт UIC 918.3 / VDV-KA для немецких билетов).
+         * Рисует характерную центральную мишень (концентрические квадраты) и плотную матрицу модулей вокруг.
+         */
+        let currentSeed = 20261101;
+
+        function seededRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function drawAztecCode(seed = currentSeed) {
+            const canvas = document.getElementById('aztecCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            // Размер сетки 67x67 модулей (соответствует полноразмерному билету D-Ticket)
+            const gridSize = 67;
+            const scale = 8; // Высокое разрешение для четкости
+            canvas.width = gridSize * scale;
+            canvas.height = gridSize * scale;
+
+            // Заливаем белый фон
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const center = Math.floor(gridSize / 2); // 33
+            let localSeed = seed;
+
+            // 1. Заполняем всю матрицу псевдослучайными модулями данных
+            ctx.fillStyle = '#09090B';
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    // Пропускаем центральную зону для мишени (13x13 модулей)
+                    if (Math.abs(x - center) <= 6 && Math.abs(y - center) <= 6) {
+                        continue;
+                    }
+
+                    // Опорные направляющие линии (как в настоящем Full Aztec Code)
+                    if (x === center || y === center) {
+                        if ((x + y) % 2 === 0) {
+                            ctx.fillRect(x * scale, y * scale, scale, scale);
+                        }
+                        continue;
+                    }
+
+                    // Модули данных
+                    if (seededRandom(localSeed++) > 0.48) {
+                        ctx.fillRect(x * scale, y * scale, scale, scale);
+                    }
+                }
+            }
+
+            // 2. Отрисовываем центральную мишень Aztec (Finder Pattern)
+            // В Aztec-коде мишень состоит из чередующихся черных и белых концентрических рамок
+            for (let r = 6; r >= 0; r--) {
+                ctx.fillStyle = (r % 2 === 0) ? '#09090B' : '#FFFFFF';
+                const start = (center - r) * scale;
+                const size = (r * 2 + 1) * scale;
+                ctx.fillRect(start, start, size, size);
+            }
+
+            // 3. Ориентационные метки по углам мишени (характерная особенность Aztec)
+            ctx.fillStyle = '#09090B';
+            // Верхний левый угол
+            ctx.fillRect((center - 6) * scale, (center - 6) * scale, scale, scale);
+            ctx.fillRect((center - 5) * scale, (center - 6) * scale, scale, scale);
+            ctx.fillRect((center - 6) * scale, (center - 5) * scale, scale, scale);
+            // Верхний правый угол
+            ctx.fillRect((center + 6) * scale, (center - 6) * scale, scale, scale);
+            ctx.fillRect((center + 6) * scale, (center - 5) * scale, scale, scale);
+            // Нижний правый угол
+            ctx.fillRect((center + 6) * scale, (center + 6) * scale, scale, scale);
+        }
+
+        /**
+         * Переключение вкладок нижней навигации
+         */
+        function switchTab(tabName) {
+            const views = ['tickets', 'account', 'settings'];
+            const titles = {
+                tickets: 'Mein Ticket',
+                account: 'Kundenkonto',
+                settings: 'Einstellungen'
+            };
+
+            views.forEach(view => {
+                const el = document.getElementById(`view-${view}`);
+                const nav = document.getElementById(`nav-${view}`);
+                if (view === tabName) {
+                    el.classList.remove('hidden');
+                    nav.classList.remove('text-zinc-500');
+                    nav.classList.add('text-[#E2001A]');
+                } else {
+                    el.classList.add('hidden');
+                    nav.classList.remove('text-[#E2001A]');
+                    nav.classList.add('text-zinc-500');
+                }
+            });
+
+            // При каждом открытии настроек снова запрашиваем пароль
+            if (tabName === 'settings') {
+                document.getElementById('settings-lock-screen').classList.remove('hidden');
+                document.getElementById('settings-unlocked-content').classList.add('hidden');
+                const passInput = document.getElementById('settings-password-input');
+                passInput.value = '';
+                document.getElementById('settings-password-error').classList.add('hidden');
+                setTimeout(() => passInput.focus(), 50);
+            }
+
+            document.getElementById('headerTitle').textContent = titles[tabName];
+        }
+
+        /**
+         * Проверка пароля (7266) для доступа к настройкам
+         */
+        function unlockSettings() {
+            const passInput = document.getElementById('settings-password-input');
+            const errorMsg = document.getElementById('settings-password-error');
+            if (passInput.value.trim() === '7266') {
+                errorMsg.classList.add('hidden');
+                document.getElementById('settings-lock-screen').classList.add('hidden');
+                document.getElementById('settings-unlocked-content').classList.remove('hidden');
+            } else {
+                errorMsg.classList.remove('hidden');
+                passInput.value = '';
+                passInput.focus();
+            }
+        }
+
+        /**
+         * Действие при нажатии на стрелку "Назад" в красной шапке
+         */
+        function handleBackClick() {
+            const ticketsView = document.getElementById('view-tickets');
+            if (ticketsView.classList.contains('hidden')) {
+                switchTab('tickets');
+            } else {
+                showToast('Sie befinden sich bereits auf der Ticket-Ansicht');
+            }
+        }
+
+        /**
+         * Применение пользовательских настроек из вкладки "Einstellungen"
+         */
+        function applyDemoSettings() {
+            const name = document.getElementById('input-name').value.trim() || 'Veniamin Miller';
+            const dob = document.getElementById('input-dob').value.trim() || '26.03.2011';
+            const issued = document.getElementById('input-issued').value.trim() || '11.01.2026 15:00';
+            const validFrom = document.getElementById('input-from').value.trim() || '11.01.2026 15:00';
+            const validUntil = document.getElementById('input-until').value.trim() || '01.11.2028 15:00';
+
+            document.getElementById('display-passenger-name').textContent = name;
+            document.getElementById('display-dob').textContent = dob;
+            document.getElementById('account-dob').textContent = dob;
+            document.getElementById('account-name-header').textContent = name.replace(',', '');
+            
+            // Обновляем инициалы в кружке профиля (например, VM для Veniamin Miller)
+            const parts = name.replace(',', '').split(/\s+/).filter(Boolean);
+            const initials = parts.length >= 2 
+                ? (parts[0][0] + parts[1][0]).toUpperCase() 
+                : name.slice(0, 2).toUpperCase();
+            document.getElementById('account-avatar').textContent = initials;
+
+            document.getElementById('display-issued').textContent = issued;
+            document.getElementById('display-valid-from').textContent = validFrom;
+            document.getElementById('display-valid-until').textContent = validUntil;
+
+            // Обновляем seed кода на основе имени, чтобы код менялся при смене данных
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = ((hash << 5) - hash) + name.charCodeAt(i);
+            }
+            currentSeed = Math.abs(hash) + 1000;
+            drawAztecCode(currentSeed);
+
+            switchTab('tickets');
+            showToast('Ticketdaten aktualisiert');
+        }
+
+        /**
+         * Генерация нового рисунка Aztec-кода
+         */
+        function regenerateAztec() {
+            currentSeed = Math.floor(Math.random() * 900000) + 100000;
+            drawAztecCode(currentSeed);
+            showToast('Neuer Aztec-Code generiert');
+        }
+
+        /**
+         * Показ аккуратного всплывающего сообщения вместо alert()
+         */
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2600);
+        }
+
+        // Инициализация при загрузке страницы
+        window.addEventListener('DOMContentLoaded', () => {
+            drawAztecCode();
+        });
+    </script>
+</body>
+</html>
